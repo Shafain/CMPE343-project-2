@@ -317,8 +317,29 @@ public class MenuSystem {
     }
 
     private void handleChangePassword() {
-        // Simplified for this project scope (normally requires DB update)
-        ConsoleColors.printInfo("Feature not fully implemented in DAO for brevity, but UI logic exists.");
+        System.out.println("--- Change Password ---");
+
+        String newPass = InputHelper.readString("Enter new password");
+        if (newPass.isEmpty()) {
+            ConsoleColors.printError("Password cannot be empty.");
+            return;
+        }
+
+        String confirmPass = InputHelper.readString("Confirm new password");
+
+        if (!newPass.equals(confirmPass)) {
+            ConsoleColors.printError("Passwords do not match! Operation cancelled.");
+            return;
+        }
+
+        // Get current user ID
+        int userId = SessionContext.getInstance().getCurrentUser().getUserId();
+
+        if (userDAO.updatePassword(userId, newPass)) {
+            ConsoleColors.printSuccess("Password changed successfully.");
+        } else {
+            ConsoleColors.printError("Failed to change password.");
+        }
     }
 
     // --- HELPERS ---
