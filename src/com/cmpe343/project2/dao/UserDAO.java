@@ -12,7 +12,7 @@ import java.util.List;
 
 /**
  * Data Access Object for User entities.
- * Handles authentication and CRUD operations for Users.
+ * Handles authentication, CRUD operations, and Password Management for Users.
  */
 public class UserDAO {
 
@@ -97,6 +97,29 @@ public class UserDAO {
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
             ConsoleColors.printError("Error deleting user: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Updates the password for a specific user.
+     * 
+     * @param userId         The ID of the user changing their password.
+     * @param newRawPassword The new plain text password.
+     * @return true if successful.
+     */
+    public boolean updatePassword(int userId, String newRawPassword) {
+        String sql = "UPDATE users SET password_hash = ? WHERE user_id = ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            // Hash the new password before storing it
+            stmt.setString(1, SecurityUtil.hashPassword(newRawPassword));
+            stmt.setInt(2, userId);
+
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            ConsoleColors.printError("Error updating password: " + e.getMessage());
             return false;
         }
     }
