@@ -102,6 +102,47 @@ public class UserDAO {
     }
 
     /**
+     * Updates an existing user's details (Role, Name, etc).
+     * Passwords are updated via a separate method.
+     */
+    public boolean updateUser(User user) {
+        String sql = "UPDATE users SET first_name = ?, last_name = ?, role = ? WHERE user_id = ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, user.getFirstName());
+            stmt.setString(2, user.getLastName());
+            stmt.setString(3, user.getRole().toString());
+            stmt.setInt(4, user.getUserId());
+
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            ConsoleColors.printError("Error updating user: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Finds a user by ID.
+     * Helper method for update operations.
+     */
+    public User getUserById(int id) {
+        String sql = "SELECT * FROM users WHERE user_id = ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, id);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return mapRowToUser(rs);
+            }
+        } catch (SQLException e) {
+            ConsoleColors.printError("Error finding user: " + e.getMessage());
+        }
+        return null;
+    }
+
+    /**
      * Updates the password for a specific user.
      * 
      * @param userId         The ID of the user changing their password.

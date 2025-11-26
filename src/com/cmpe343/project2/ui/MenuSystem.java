@@ -121,6 +121,7 @@ public class MenuSystem {
             System.out.println("11. Manager: Add New User");
             System.out.println("12. Manager: List All Users");
             System.out.println("13. Manager: Delete User");
+            System.out.println("14. Manager: Update User Role/Details");
         }
 
         int choice = InputHelper.readInt("Select Operation");
@@ -184,6 +185,10 @@ public class MenuSystem {
                 if (checkPermission(role, Role.MANAGER))
                     handleDeleteUser();
                 break;
+            case 14:
+                if (checkPermission(role, Role.MANAGER))
+                    handleUpdateUser();
+                break;
 
             case 99:
                 commandInvoker.undoLastCommand();
@@ -237,7 +242,8 @@ public class MenuSystem {
         c.setNickname(InputHelper.readString("Nickname"));
         c.setPhonePrimary(InputHelper.readPhone("Primary Phone"));
         c.setPhoneSecondary(InputHelper.readString("Secondary Phone (Optional)"));
-        c.setEmail(InputHelper.readString("Email"));
+        // Use the specific Email validator
+        c.setEmail(InputHelper.readEmail("Email"));
         c.setLinkedinUrl(InputHelper.readString("LinkedIn URL (Optional)"));
         c.setBirthDate(InputHelper.readDate("Birth Date"));
 
@@ -276,6 +282,20 @@ public class MenuSystem {
         if (!input.isEmpty())
             newContact.setPhonePrimary(input);
 
+        ConsoleColors.printInfo("Enter new value or press enter to keep [" + oldContact.getEmail() + "]");
+        while (true) {
+            input = InputHelper.readString("Email");
+            if (input.isEmpty())
+                break; // Keep old email
+            // Basic Validation logic duplicated here for the "optional" update flow
+            if (input.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")) {
+                newContact.setEmail(input);
+                break;
+            } else {
+                ConsoleColors.printError("Invalid email format.");
+            }
+        }
+
         // Execute via Command Invoker
         Command cmd = new UpdateContactCommand(contactDAO, oldContact, newContact);
         commandInvoker.executeCommand(cmd);
@@ -313,6 +333,36 @@ public class MenuSystem {
             ConsoleColors.printSuccess("User deleted.");
         } else {
             ConsoleColors.printError("User not found.");
+        }
+    }
+
+    private void handleUpdateUser() {
+        int id = InputHelper.readInt("Enter User ID to Update");
+        User existingUser = userDAO.getUserById(id);
+
+        if (existingUser == null) {
+            ConsoleColors.printError("User not found.");
+            return;
+        }
+
+        System.out.println("Updating User: " + existingUser.getUsername());
+        ConsoleColors.printInfo("Press Enter to keep current value.");
+
+        String fname = InputHelper.readString("First Name [" + existingUser.getFirstName() + "]");
+        if (!fname.isEmpty())
+            existingUser.setFirstName(fname);
+
+        String lname = InputHelper.readString("Last Name [" + existingUser.getLastName() + "]");
+        if (!lname.isEmpty())
+            existingUser.setLastName(lname);
+
+        String roleStr = InputHelper
+                .readString("Role [" + existingUser.getRole() + "] (TESTER, JUNIOR, SENIOR, MANAGER)");
+        if (!roleStr.isEmpty())
+            existingUser.setRole(Role.fromString(roleStr));
+
+        if (userDAO.updateUser(existingUser)) {
+            ConsoleColors.printSuccess("User updated successfully.");
         }
     }
 

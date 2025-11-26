@@ -7,7 +7,7 @@ import java.time.format.DateTimeParseException;
 
 /**
  * Helper class to handle user input from the console safely.
- * Prevents crashes due to InputMismatchException.
+ * Prevents crashes due to InputMismatchException and handles Data Validation.
  */
 public class InputHelper {
     private static final Scanner scanner = new Scanner(System.in);
@@ -21,6 +21,26 @@ public class InputHelper {
     public static String readString(String prompt) {
         System.out.print(prompt + ": ");
         return scanner.nextLine().trim();
+    }
+
+    /**
+     * Reads a string and validates it is a proper email format.
+     * Requirement: "Validating records... correctness of user-provided data."
+     * 
+     * @param prompt The text to display.
+     * @return A valid email string.
+     */
+    public static String readEmail(String prompt) {
+        while (true) {
+            System.out.print(prompt + ": ");
+            String input = scanner.nextLine().trim();
+
+            // Basic Regex for standard email format (user@domain.com)
+            if (input.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")) {
+                return input;
+            }
+            ConsoleColors.printError("Invalid email format. Example: user@example.com");
+        }
     }
 
     /**
