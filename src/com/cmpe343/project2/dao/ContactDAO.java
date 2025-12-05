@@ -2,6 +2,7 @@ package com.cmpe343.project2.dao;
 
 import com.cmpe343.project2.db.DatabaseConnection;
 import com.cmpe343.project2.model.Contact;
+import com.cmpe343.project2.model.SearchCriteria;
 import com.cmpe343.project2.util.ConsoleColors;
 
 import java.sql.*;
@@ -19,18 +20,21 @@ public class ContactDAO {
      */
     public boolean addContact(Contact c) {
         String sql = "INSERT INTO contacts (first_name, middle_name, last_name, nickname, phone_primary, phone_secondary, email, linkedin_url, birth_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        try (Connection conn = DatabaseConnection.getConnection();
-                PreparedStatement stmt = conn.prepareStatement(sql)) {
+        try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setString(1, c.getFirstName());
-            stmt.setString(2, c.getMiddleName());
+            stmt.setString(2, emptyToNull(c.getMiddleName()));
             stmt.setString(3, c.getLastName());
-            stmt.setString(4, c.getNickname());
+            stmt.setString(4, emptyToNull(c.getNickname()));
             stmt.setString(5, c.getPhonePrimary());
-            stmt.setString(6, c.getPhoneSecondary());
+            stmt.setString(6, emptyToNull(c.getPhoneSecondary()));
             stmt.setString(7, c.getEmail());
-            stmt.setString(8, c.getLinkedinUrl());
-            stmt.setDate(9, java.sql.Date.valueOf(c.getBirthDate()));
+            stmt.setString(8, emptyToNull(c.getLinkedinUrl()));
+            if (c.getBirthDate() == null) {
+                stmt.setNull(9, Types.DATE);
+            } else {
+                stmt.setDate(9, java.sql.Date.valueOf(c.getBirthDate()));
+            }
 
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -44,18 +48,21 @@ public class ContactDAO {
      */
     public boolean updateContact(Contact c) {
         String sql = "UPDATE contacts SET first_name=?, middle_name=?, last_name=?, nickname=?, phone_primary=?, phone_secondary=?, email=?, linkedin_url=?, birth_date=? WHERE contact_id=?";
-        try (Connection conn = DatabaseConnection.getConnection();
-                PreparedStatement stmt = conn.prepareStatement(sql)) {
+        try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setString(1, c.getFirstName());
-            stmt.setString(2, c.getMiddleName());
+            stmt.setString(2, emptyToNull(c.getMiddleName()));
             stmt.setString(3, c.getLastName());
-            stmt.setString(4, c.getNickname());
+            stmt.setString(4, emptyToNull(c.getNickname()));
             stmt.setString(5, c.getPhonePrimary());
-            stmt.setString(6, c.getPhoneSecondary());
+            stmt.setString(6, emptyToNull(c.getPhoneSecondary()));
             stmt.setString(7, c.getEmail());
-            stmt.setString(8, c.getLinkedinUrl());
-            stmt.setDate(9, java.sql.Date.valueOf(c.getBirthDate()));
+            stmt.setString(8, emptyToNull(c.getLinkedinUrl()));
+            if (c.getBirthDate() == null) {
+                stmt.setNull(9, Types.DATE);
+            } else {
+                stmt.setDate(9, java.sql.Date.valueOf(c.getBirthDate()));
+            }
             stmt.setInt(10, c.getContactId());
 
             return stmt.executeUpdate() > 0;
@@ -135,28 +142,45 @@ public class ContactDAO {
      * Multi-field search (Complex Requirement).
      * Example: Name contains "Ahmet" AND Phone contains "555".
      */
-    public List<Contact> advancedSearch(String nameQuery, String phoneQuery) {
+    public List<Contact> searchByCriteria(SearchCriteria criteria) {
         List<Contact> list = new ArrayList<>();
         StringBuilder sql = new StringBuilder("SELECT * FROM contacts WHERE 1=1");
 
-        if (nameQuery != null && !nameQuery.isEmpty()) {
-            sql.append(" AND (first_name LIKE ? OR last_name LIKE ?)");
+        if (criteria.getFirstName() != null && !criteria.getFirstName().isBlank()) {
+            sql.append(" AND first_name LIKE ?");
         }
-        if (phoneQuery != null && !phoneQuery.isEmpty()) {
+        if (criteria.getLastName() != null && !criteria.getLastName().isBlank()) {
+            sql.append(" AND last_name LIKE ?");
+        }
+        if (criteria.getPhone() != null && !criteria.getPhone().isBlank()) {
             sql.append(" AND (phone_primary LIKE ? OR phone_secondary LIKE ?)");
+        }
+        if (criteria.getEmail() != null && !criteria.getEmail().isBlank()) {
+            sql.append(" AND email LIKE ?");
+        }
+        if (criteria.getBirthMonth() != null) {
+            sql.append(" AND MONTH(birth_date) = ?");
         }
 
         try (Connection conn = DatabaseConnection.getConnection();
                 PreparedStatement stmt = conn.prepareStatement(sql.toString())) {
 
-            int paramIndex = 1;
-            if (nameQuery != null && !nameQuery.isEmpty()) {
-                stmt.setString(paramIndex++, "%" + nameQuery + "%");
-                stmt.setString(paramIndex++, "%" + nameQuery + "%");
+            int idx = 1;
+            if (criteria.getFirstName() != null && !criteria.getFirstName().isBlank()) {
+                stmt.setString(idx++, "%" + criteria.getFirstName() + "%");
             }
-            if (phoneQuery != null && !phoneQuery.isEmpty()) {
-                stmt.setString(paramIndex++, "%" + phoneQuery + "%");
-                stmt.setString(paramIndex++, "%" + phoneQuery + "%");
+            if (criteria.getLastName() != null && !criteria.getLastName().isBlank()) {
+                stmt.setString(idx++, "%" + criteria.getLastName() + "%");
+            }
+            if (criteria.getPhone() != null && !criteria.getPhone().isBlank()) {
+                stmt.setString(idx++, "%" + criteria.getPhone() + "%");
+                stmt.setString(idx++, "%" + criteria.getPhone() + "%");
+            }
+            if (criteria.getEmail() != null && !criteria.getEmail().isBlank()) {
+                stmt.setString(idx++, "%" + criteria.getEmail() + "%");
+            }
+            if (criteria.getBirthMonth() != null) {
+                stmt.setInt(idx++, criteria.getBirthMonth());
             }
 
             ResultSet rs = stmt.executeQuery();
@@ -184,15 +208,44 @@ public class ContactDAO {
             if (rs.next())
                 stats.append("Total Contacts: ").append(rs.getInt(1)).append("\n");
 
+            rs = stmt.executeQuery(
+                    "SELECT COUNT(*) FROM contacts WHERE linkedin_url IS NOT NULL AND linkedin_url <> ''");
+            if (rs.next())
+                stats.append("With LinkedIn URLs: ").append(rs.getInt(1)).append("\n");
+
+            rs = stmt.executeQuery(
+                    "SELECT COUNT(*) FROM contacts WHERE linkedin_url IS NULL OR linkedin_url = ''");
+            if (rs.next())
+                stats.append("Without LinkedIn URLs: ").append(rs.getInt(1)).append("\n");
+
+            rs = stmt.executeQuery(
+                    "SELECT first_name, COUNT(*) as cnt FROM contacts GROUP BY first_name HAVING cnt > 1 ORDER BY cnt DESC LIMIT 3");
+            stats.append("Most common first names: ");
+            while (rs.next()) {
+                stats.append(rs.getString("first_name")).append(" (" + rs.getInt("cnt") + "), ");
+            }
+            stats.append("\n");
+
+            rs = stmt.executeQuery(
+                    "SELECT last_name, COUNT(*) as cnt FROM contacts GROUP BY last_name HAVING cnt > 1 ORDER BY cnt DESC LIMIT 3");
+            stats.append("Most common last names: ");
+            while (rs.next()) {
+                stats.append(rs.getString("last_name")).append(" (" + rs.getInt("cnt") + "), ");
+            }
+            stats.append("\n");
+
             // Oldest
             rs = stmt.executeQuery("SELECT MIN(birth_date) FROM contacts");
             if (rs.next())
                 stats.append("Oldest Contact DOB: ").append(rs.getDate(1)).append("\n");
-
-            // No LinkedIn
-            rs = stmt.executeQuery("SELECT COUNT(*) FROM contacts WHERE linkedin_url IS NULL OR linkedin_url = ''");
+            rs = stmt.executeQuery("SELECT MAX(birth_date) FROM contacts");
             if (rs.next())
-                stats.append("Contacts without LinkedIn: ").append(rs.getInt(1)).append("\n");
+                stats.append("Youngest Contact DOB: ").append(rs.getDate(1)).append("\n");
+
+            rs = stmt.executeQuery(
+                    "SELECT AVG(TIMESTAMPDIFF(YEAR, birth_date, CURDATE())) FROM contacts WHERE birth_date IS NOT NULL");
+            if (rs.next())
+                stats.append("Average Age: ").append(String.format("%.1f", rs.getDouble(1))).append(" years\n");
 
         } catch (SQLException e) {
             return "Could not calculate stats.";
@@ -202,10 +255,13 @@ public class ContactDAO {
 
     private boolean isValidColumn(String col) {
         // Basic whitelist to prevent SQL Injection in ORDER BY clauses
-        return col.matches("(?i)(contact_id|first_name|last_name|email|phone_primary|birth_date)");
+        return col.matches("(?i)(contact_id|first_name|middle_name|last_name|nickname|email|phone_primary|phone_secondary|birth_date|linkedin_url|created_at|updated_at)");
     }
 
     private Contact mapRowToContact(ResultSet rs) throws SQLException {
+        Date birth = rs.getDate("birth_date");
+        Timestamp created = rs.getTimestamp("created_at");
+        Timestamp updated = rs.getTimestamp("updated_at");
         return new Contact(
                 rs.getInt("contact_id"),
                 rs.getString("first_name"),
@@ -216,6 +272,12 @@ public class ContactDAO {
                 rs.getString("phone_secondary"),
                 rs.getString("email"),
                 rs.getString("linkedin_url"),
-                rs.getDate("birth_date").toLocalDate());
+                birth == null ? null : birth.toLocalDate(),
+                created == null ? null : created.toLocalDateTime(),
+                updated == null ? null : updated.toLocalDateTime());
+    }
+
+    private String emptyToNull(String value) {
+        return (value == null || value.isBlank()) ? null : value;
     }
 }

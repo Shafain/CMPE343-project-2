@@ -1,6 +1,7 @@
 package com.cmpe343.project2.model;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 /**
  * Represents a Contact in the system.
@@ -18,6 +19,8 @@ public class Contact {
     private String email;
     private String linkedinUrl; // Optional
     private LocalDate birthDate;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
     // Constructors
     public Contact() {
@@ -39,6 +42,16 @@ public class Contact {
         this.email = email;
         this.linkedinUrl = linkedinUrl;
         this.birthDate = birthDate;
+    }
+
+    public Contact(int contactId, String firstName, String middleName, String lastName,
+            String nickname, String phonePrimary, String phoneSecondary,
+            String email, String linkedinUrl, LocalDate birthDate,
+            LocalDateTime createdAt, LocalDateTime updatedAt) {
+        this(contactId, firstName, middleName, lastName, nickname, phonePrimary, phoneSecondary, email, linkedinUrl,
+                birthDate);
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
     }
 
     // Getters and Setters (Encapsulation)
@@ -121,6 +134,22 @@ public class Contact {
 
     public void setBirthDate(LocalDate birthDate) {
         this.birthDate = birthDate;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
     }
 
     /**
