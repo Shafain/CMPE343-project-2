@@ -8,8 +8,21 @@ import com.cmpe343.project2.util.ConsoleColors;
  * CMPE 343 - Project 2
  * Advanced Java Programming with Object-Oriented Paradigms and Database
  * Integration.
- * 
- * Main Entry Point.
+ *
+ * Main entry point responsible for orchestrating application startup. The
+ * method performs the following steps in order:
+ * <ol>
+ * <li>Seed baseline data via {@link com.cmpe343.project2.db.DataSeeder} so the
+ *     UI can be explored immediately.</li>
+ * <li>Create the {@link com.cmpe343.project2.ui.MenuSystem} controller.</li>
+ * <li>Delegate user interaction by invoking
+ *     {@link com.cmpe343.project2.ui.MenuSystem#start()}.</li>
+ * </ol>
+ *
+ * @author Raul Ibrahimov
+ * @author Akhmed Nazarov
+ * @author Omirbek Ubaidayev
+ * @author Kuandyk Kyrykbayev
  */
 public class Main {
 
