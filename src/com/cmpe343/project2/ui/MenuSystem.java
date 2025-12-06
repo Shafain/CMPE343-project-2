@@ -678,13 +678,13 @@ public class MenuSystem {
             ConsoleColors.printWarning("No contacts found.");
             return;
         }
-        System.out.printf("%-4s %-12s %-12s %-12s %-12s %-14s %-14s %-25s %-18s %-12s %-20s %-20s%n",
-                "ID", "First", "Middle", "Last", "Nickname", "Phone (P)", "Phone (S)", "Email", "LinkedIn",
-                "Birth", "Created", "Updated");
+        System.out.printf("%-4s %-12s %-12s %-12s %-12s %-14s %-14s %-25s %-12s %-20s %-20s %-18s%n",
+                "ID", "First", "Middle", "Last", "Nickname", "Phone (P)", "Phone (S)", "Email",
+                "Birth", "Created", "Updated", "LinkedIn");
         System.out.println(
-                "---------------------------------------------------------------------------------------------------------------------------------");
+                "---------------------------------------------------------------------------------------------------------------");
         for (Contact c : list) {
-            System.out.printf("%-4d %-12s %-12s %-12s %-12s %-14s %-14s %-25s %-18s %-12s %-20s %-20s%n",
+            System.out.printf("%-4d %-12s %-12s %-12s %-12s %-14s %-14s %-25s %-12s %-20s %-20s %-18s%n",
                     c.getContactId(),
                     safe(c.getFirstName()),
                     safe(c.getMiddleName()),
@@ -693,13 +693,13 @@ public class MenuSystem {
                     safe(c.getPhonePrimary()),
                     safe(c.getPhoneSecondary()),
                     safe(c.getEmail()),
-                    safe(c.getLinkedinUrl()),
                     c.getBirthDate() == null ? "" : c.getBirthDate().toString(),
                     c.getCreatedAt() == null ? "" : c.getCreatedAt().toString(),
-                    c.getUpdatedAt() == null ? "" : c.getUpdatedAt().toString());
+                    c.getUpdatedAt() == null ? "" : c.getUpdatedAt().toString(),
+                    safe(c.getLinkedinUrl()));
         }
         System.out.println(
-                "---------------------------------------------------------------------------------------------------------------------------------");
+                "---------------------------------------------------------------------------------------------------------------");
     }
 
     private List<Contact> getSortedContacts() {
