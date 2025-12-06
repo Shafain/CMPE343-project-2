@@ -36,9 +36,10 @@ public class DataSeeder {
         if (contactDAO.findAll("contact_id", true).isEmpty()) {
             ConsoleColors.printInfo("Seeding 50 Dummy Contacts...");
             String[] firstNames = { "Ahmet", "Mehmet", "Ayse", "Fatma", "John", "Jane", "Ali", "Veli", "Zeynep",
-                    "Elif" };
+                    "Elif", "Sofia", "Liam", "Noah", "Olivia", "Mia", "Lucas", "Emir", "Aisha", "Diego", "Natalia" };
             String[] lastNames = { "Yilmaz", "Demir", "Kaya", "Celik", "Smith", "Doe", "Ozturk", "Arslan", "Koc",
-                    "Sahin" };
+                    "Sahin", "Garcia", "Khan", "Brown", "Ivanov", "Suzuki", "Nguyen", "Lopez", "Patel", "Hansen",
+                    "Petrova" };
 
             Random rand = new Random();
 

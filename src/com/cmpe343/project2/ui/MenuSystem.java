@@ -134,9 +134,10 @@ public class MenuSystem {
                     System.out.println("3. Update Existing User");
                     System.out.println("4. Add/Employ New User");
                     System.out.println("5. Delete/Fire Existing User");
-                    System.out.println("6. Change Password");
-                    System.out.println("7. Logout");
-                    stay = processMenuChoice(InputHelper.readChoice("Select Operation", 1, 2, 3, 4, 5, 6, 7),
+                    System.out.println("6. Undo Last Action");
+                    System.out.println("7. Change Password");
+                    System.out.println("8. Logout");
+                    stay = processMenuChoice(InputHelper.readChoice("Select Operation", 1, 2, 3, 4, 5, 6, 7, 8),
                             role);
                     break;
             }
@@ -290,9 +291,12 @@ public class MenuSystem {
                 handleDeleteUser();
                 return true;
             case 6:
-                handleChangePassword();
+                commandInvoker.undoLastCommand();
                 return true;
             case 7:
+                handleChangePassword();
+                return true;
+            case 8:
                 SessionContext.getInstance().logout();
                 return false;
             default:
@@ -368,52 +372,90 @@ public class MenuSystem {
     }
 
     private void handleMultiFieldSearch() {
+        ConsoleColors.printInfo("Provide at least two fields. Partial text is accepted. Type 'back' to cancel any step.");
         while (true) {
-            ConsoleColors.printInfo(
-                    "Provide at least two fields. Partial text is accepted. Type 'back' to cancel any step.");
-            String firstName = InputHelper.readValidatedString("First Name contains", true, "[A-Za-z\\-\\s]*",
-                    "Use letters, spaces or hyphens only.", true);
-            if (firstName == null)
-                return;
-            String lastName = InputHelper.readValidatedString("Last Name contains", true, "[A-Za-z\\-\\s]*",
-                    "Use letters, spaces or hyphens only.", true);
-            if (lastName == null)
-                return;
-            String phone = InputHelper.readValidatedString("Phone contains", true, "[0-9+\\-\\s]*",
-                    "Use digits only for phone search.", true);
-            if (phone == null)
-                return;
-            String email = InputHelper.readValidatedString("Email contains", true, "[A-Za-z0-9@._+-]*",
-                    "Use typical email characters only.", true);
-            if (email == null)
+            System.out.println(
+                    "Select fields to search (comma-separated). Options: 1) First Name 2) Last Name 3) Phone 4) Email 5) Birth Month");
+            String selectionInput = InputHelper.readString("Enter selections or type 'back'");
+            if ("back".equalsIgnoreCase(selectionInput))
                 return;
 
-            Integer month = null;
-            while (true) {
-                String monthInput = InputHelper.readString("Birth month (1-12, optional, 'back' to cancel)");
-                if ("back".equalsIgnoreCase(monthInput))
-                    return;
-                if (monthInput.isEmpty())
-                    break;
+            String[] tokens = selectionInput.split(",");
+            List<Integer> selections = new java.util.ArrayList<>();
+            for (String token : tokens) {
+                if (token.trim().isEmpty())
+                    continue;
                 try {
-                    int m = Integer.parseInt(monthInput);
-                    if (m < 1 || m > 12) {
-                        ConsoleColors.printError("Month must be between 1 and 12.");
-                        continue;
+                    int val = Integer.parseInt(token.trim());
+                    if (val >= 1 && val <= 5 && !selections.contains(val)) {
+                        selections.add(val);
                     }
-                    month = m;
-                    break;
-                } catch (NumberFormatException e) {
-                    ConsoleColors.printError("Month must be numeric.");
+                } catch (NumberFormatException ignored) {
                 }
             }
 
+            if (selections.size() < 2) {
+                ConsoleColors.printWarning("Choose at least two valid fields (1-5).");
+                continue;
+            }
+
             SearchCriteria criteria = new SearchCriteria();
-            criteria.setFirstName(firstName);
-            criteria.setLastName(lastName);
-            criteria.setPhone(phone);
-            criteria.setEmail(email);
-            criteria.setBirthMonth(month);
+            boolean cancelled = false;
+
+            for (Integer choice : selections) {
+                switch (choice) {
+                    case 1 -> {
+                        String firstName = InputHelper.readValidatedString("First Name contains", false, "[A-Za-z\\-\\s]+",
+                                "Use letters, spaces or hyphens only.", true);
+                        if (firstName == null) {
+                            cancelled = true;
+                        } else {
+                            criteria.setFirstName(firstName);
+                        }
+                    }
+                    case 2 -> {
+                        String lastName = InputHelper.readValidatedString("Last Name contains", false, "[A-Za-z\\-\\s]+",
+                                "Use letters, spaces or hyphens only.", true);
+                        if (lastName == null) {
+                            cancelled = true;
+                        } else {
+                            criteria.setLastName(lastName);
+                        }
+                    }
+                    case 3 -> {
+                        String phone = InputHelper.readValidatedString("Phone contains", false, "[0-9+\\-\\s]+",
+                                "Use digits only for phone numbers.", true);
+                        if (phone == null) {
+                            cancelled = true;
+                        } else {
+                            criteria.setPhone(phone);
+                        }
+                    }
+                    case 4 -> {
+                        String email = InputHelper.readValidatedString("Email contains", false, "[A-Za-z0-9+_.-@]+",
+                                "Use standard email characters only.", true);
+                        if (email == null) {
+                            cancelled = true;
+                        } else {
+                            criteria.setEmail(email);
+                        }
+                    }
+                    case 5 -> {
+                        Integer month = readBirthMonthWithBack();
+                        if (month == null) {
+                            cancelled = true;
+                        } else {
+                            criteria.setBirthMonth(month);
+                        }
+                    }
+                }
+
+                if (cancelled)
+                    break;
+            }
+
+            if (cancelled)
+                continue;
 
             if (criteria.activeCriteriaCount() < 2) {
                 ConsoleColors.printWarning("Please provide at least two filters for advanced search.");
@@ -439,6 +481,25 @@ public class MenuSystem {
         return criteria;
     }
 
+    private Integer readBirthMonthWithBack() {
+        while (true) {
+            String monthInput = InputHelper.readString("Birth month (1-12) or 'back' to cancel");
+            if ("back".equalsIgnoreCase(monthInput)) {
+                return null;
+            }
+            try {
+                int m = Integer.parseInt(monthInput.trim());
+                if (m < 1 || m > 12) {
+                    ConsoleColors.printError("Month must be between 1 and 12.");
+                    continue;
+                }
+                return m;
+            } catch (NumberFormatException e) {
+                ConsoleColors.printError("Month must be numeric.");
+            }
+        }
+    }
+
     private void handleSort() {
         ConsoleColors.printInfo("Select a field to sort by. Sorting persists until changed.");
         System.out.println("1. ID");
@@ -446,7 +507,23 @@ public class MenuSystem {
         System.out.println("3. Last Name");
         System.out.println("4. Email");
         System.out.println("5. Primary Phone");
-        int colChoice = InputHelper.readChoice("Field", 1, 2, 3, 4, 5);
+        String colInput = InputHelper.readString("Field (or 'back' to cancel)");
+        if ("back".equalsIgnoreCase(colInput))
+            return;
+
+        int colChoice;
+        try {
+            colChoice = Integer.parseInt(colInput);
+        } catch (NumberFormatException e) {
+            ConsoleColors.printError("Invalid input. Please enter a valid number.");
+            return;
+        }
+
+        if (colChoice < 1 || colChoice > 5) {
+            ConsoleColors.printError("Invalid option. Allowed: [1, 2, 3, 4, 5]");
+            return;
+        }
+
         String col = switch (colChoice) {
             case 1 -> "contact_id";
             case 2 -> "first_name";
@@ -457,10 +534,25 @@ public class MenuSystem {
         };
 
         System.out.println("Order: 1. Ascending, 2. Descending");
-        boolean asc = InputHelper.readChoice("Order", 1, 2) == 1;
+        String orderInput = InputHelper.readString("Order (or 'back' to cancel)");
+        if ("back".equalsIgnoreCase(orderInput))
+            return;
+
+        int orderChoice;
+        try {
+            orderChoice = Integer.parseInt(orderInput);
+        } catch (NumberFormatException e) {
+            ConsoleColors.printError("Invalid input. Please enter 1 or 2.");
+            return;
+        }
+
+        if (orderChoice != 1 && orderChoice != 2) {
+            ConsoleColors.printError("Invalid option. Allowed: [1, 2]");
+            return;
+        }
 
         lastSortColumn = col;
-        lastSortAsc = asc;
+        lastSortAsc = orderChoice == 1;
         printContacts(getSortedContacts());
     }
 
@@ -489,10 +581,6 @@ public class MenuSystem {
         String email = InputHelper.readOptionalEmail("Email", true);
         if (email == null)
             return;
-        if (email.isEmpty()) {
-            ConsoleColors.printError("Email is required.");
-            return;
-        }
         c.setEmail(email);
         c.setLinkedinUrl(InputHelper.readValidatedString("LinkedIn URL", true, "[A-Za-z0-9:/._-]*",
                 "Only URL-safe characters are allowed.", true));
@@ -607,12 +695,30 @@ public class MenuSystem {
     }
 
     private void handleDeleteUser() {
-        int id = InputHelper.readInt("Enter User ID to DELETE");
-        if (userDAO.deleteUser(id)) {
-            ConsoleColors.printSuccess("User deleted.");
-        } else {
-            ConsoleColors.printError("User not found.");
+        String idInput = InputHelper.readString("Enter User ID to DELETE (or type 'back')");
+        if ("back".equalsIgnoreCase(idInput))
+            return;
+
+        int id;
+        try {
+            id = Integer.parseInt(idInput);
+        } catch (NumberFormatException e) {
+            ConsoleColors.printError("Invalid input. Please enter a valid number.");
+            return;
         }
+
+        User target = userDAO.getUserById(id);
+        if (target == null) {
+            ConsoleColors.printError("User not found.");
+            return;
+        }
+
+        int confirm = InputHelper.readChoice("Are you sure you want to delete this user? 1=Yes 2=No", 1, 2);
+        if (confirm == 2)
+            return;
+
+        Command cmd = new DeleteUserCommand(userDAO, target);
+        commandInvoker.executeCommand(cmd);
     }
 
     private void handleUpdateUser() {
