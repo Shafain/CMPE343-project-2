@@ -26,6 +26,7 @@ public class ConsoleColors {
     public static final String BLUE_BOLD = "\033[1;34m";
     public static final String PURPLE_BOLD = "\033[1;35m";
     public static final String CYAN_BOLD = "\033[1;36m";
+    public static final String WHITE_BOLD = "\033[1;37m";
 
     /**
      * Prints an error message in Red.
