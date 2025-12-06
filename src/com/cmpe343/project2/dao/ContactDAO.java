@@ -47,7 +47,7 @@ public class ContactDAO {
      * Updates an existing contact.
      */
     public boolean updateContact(Contact c) {
-        String sql = "UPDATE contacts SET first_name=?, middle_name=?, last_name=?, nickname=?, phone_primary=?, phone_secondary=?, email=?, linkedin_url=?, birth_date=? WHERE contact_id=?";
+        String sql = "UPDATE contacts SET first_name=?, middle_name=?, last_name=?, nickname=?, phone_primary=?, phone_secondary=?, email=?, linkedin_url=?, birth_date=?, updated_at=CURRENT_TIMESTAMP WHERE contact_id=?";
         try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setString(1, c.getFirstName());
