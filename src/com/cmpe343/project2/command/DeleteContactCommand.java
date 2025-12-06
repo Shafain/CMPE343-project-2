@@ -28,9 +28,11 @@ public class DeleteContactCommand implements Command {
 
     @Override
     public void undo() {
-        // We insert it back. Note: ID might change because of Auto-Increment,
-        // but the data is restored.
-        contactDAO.addContact(contactToDelete);
-        ConsoleColors.printWarning("Undo: Deleted contact has been restored.");
+        boolean restored = contactDAO.restoreContact(contactToDelete);
+        if (restored) {
+            ConsoleColors.printWarning("Undo: Deleted contact has been restored to its original position.");
+        } else {
+            ConsoleColors.printError("Undo Failed: Could not restore the deleted contact.");
+        }
     }
 }
