@@ -815,13 +815,28 @@ public class MenuSystem {
             ConsoleColors.printWarning("No contacts found.");
             return;
         }
-        System.out.printf("%-4s %-12s %-12s %-12s %-12s %-14s %-14s %-25s %-12s %-20s %-20s %-18s%n",
-                "ID", "First", "Middle", "Last", "Nickname", "Phone (P)", "Phone (S)", "Email",
-                "Birth", "Created", "Updated", "LinkedIn");
-        System.out.println(
-                "---------------------------------------------------------------------------------------------------------------");
+        String headerFormat = "%-4s │ %-12s │ %-12s │ %-12s │ %-12s │ %-14s │ %-14s │ %-25s │ %-12s │ %-20s │ %-20s │ %-18s";
+        String rowFormat = "%-4d │ %-12s │ %-12s │ %-12s │ %-12s │ %-14s │ %-14s │ %-25s │ %-12s │ %-20s │ %-20s │ %-18s";
+
+        String neonAccent = "\033[48;5;54m\033[38;5;226m"; // deep purple background with neon yellow text
+        String neonShadow = "\033[48;5;235m\033[38;5;141m"; // dark background with magenta text
+        String header = String.format(headerFormat, "ID", "First", "Middle", "Last", "Nickname", "Phone (P)",
+                "Phone (S)", "Email", "Birth", "Created", "Updated", "LinkedIn");
+        int borderWidth = header.length() + 4;
+        String topBorder = neonAccent + "╔" + "═".repeat(borderWidth - 2) + "╗" + ConsoleColors.RESET;
+        String midBorder = neonAccent + "╠" + "═".repeat(borderWidth - 2) + "╣" + ConsoleColors.RESET;
+        String bottomBorder = neonAccent + "╚" + "═".repeat(borderWidth - 2) + "╝" + ConsoleColors.RESET;
+
+        System.out.println(ConsoleColors.CYAN_BOLD + "⚡ Cosmic Contact Directory ⚡" + ConsoleColors.RESET);
+        System.out.println(neonShadow + "Contacts Loaded: " + list.size() + ConsoleColors.RESET);
+        System.out.println(topBorder);
+        System.out.println(neonAccent + "║ " + ConsoleColors.BLUE_BOLD + header + ConsoleColors.RESET + neonAccent + " ║" + ConsoleColors.RESET);
+        System.out.println(midBorder);
+
+        int rowIndex = 0;
         for (Contact c : list) {
-            System.out.printf("%-4d %-12s %-12s %-12s %-12s %-14s %-14s %-25s %-12s %-20s %-20s %-18s%n",
+            String zebra = (rowIndex++ % 2 == 0) ? "\033[48;5;236m\033[38;5;159m" : "\033[48;5;238m\033[38;5;192m";
+            String row = String.format(rowFormat,
                     c.getContactId(),
                     safe(c.getFirstName()),
                     safe(c.getMiddleName()),
@@ -834,9 +849,10 @@ public class MenuSystem {
                     c.getCreatedAt() == null ? "" : c.getCreatedAt().toString(),
                     c.getUpdatedAt() == null ? "" : c.getUpdatedAt().toString(),
                     safe(c.getLinkedinUrl()));
+            System.out.println(neonAccent + "║" + ConsoleColors.RESET + " " + zebra + row + ConsoleColors.RESET
+                    + " " + neonAccent + "║" + ConsoleColors.RESET);
         }
-        System.out.println(
-                "---------------------------------------------------------------------------------------------------------------");
+        System.out.println(bottomBorder);
     }
 
     private List<Contact> getSortedContacts() {
