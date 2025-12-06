@@ -65,17 +65,12 @@ public class MenuSystem {
         while (true) {
             System.out.println("\n" + ConsoleColors.BLUE_BOLD + "=== SYSTEM LOGIN ===" + ConsoleColors.RESET);
             System.out.println("1. Login");
-            System.out.println("2. Clear Screen");
-            System.out.println("3. Exit Application");
+            System.out.println("2. Exit Application");
 
-            int choice = InputHelper.readChoice("Choose option", 1, 2, 3);
+            int choice = InputHelper.readChoice("Choose option", 1, 2);
 
-            if (choice == 3)
+            if (choice == 2)
                 return false;
-            if (choice == 2) {
-                InputHelper.clearScreen();
-                continue;
-            }
 
             if (choice == 1) {
                 attemptLogin();
@@ -95,6 +90,7 @@ public class MenuSystem {
         Role role = currentUser.getRole();
         boolean stay = true;
         while (stay && SessionContext.getInstance().isLoggedIn()) {
+            InputHelper.clearScreen();
             System.out.println("\n" + ConsoleColors.PURPLE_BOLD + "=== MAIN MENU ===" + ConsoleColors.RESET);
             System.out.println("User: " + currentUser.getFullName());
             System.out.println("Role: " + role);

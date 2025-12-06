@@ -88,6 +88,51 @@ public class ContactDAO {
     }
 
     /**
+     * Re-inserts a previously deleted contact keeping its original ID and timestamps.
+     */
+    public boolean restoreContact(Contact c) {
+        String sql = "INSERT INTO contacts (contact_id, first_name, middle_name, last_name, nickname, phone_primary,"
+                + " phone_secondary, email, linkedin_url, birth_date, created_at, updated_at)"
+                + " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+        try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, c.getContactId());
+            stmt.setString(2, c.getFirstName());
+            stmt.setString(3, emptyToNull(c.getMiddleName()));
+            stmt.setString(4, c.getLastName());
+            stmt.setString(5, emptyToNull(c.getNickname()));
+            stmt.setString(6, c.getPhonePrimary());
+            stmt.setString(7, emptyToNull(c.getPhoneSecondary()));
+            stmt.setString(8, c.getEmail());
+            stmt.setString(9, emptyToNull(c.getLinkedinUrl()));
+
+            if (c.getBirthDate() == null) {
+                stmt.setNull(10, Types.DATE);
+            } else {
+                stmt.setDate(10, java.sql.Date.valueOf(c.getBirthDate()));
+            }
+
+            if (c.getCreatedAt() == null) {
+                stmt.setNull(11, Types.TIMESTAMP);
+            } else {
+                stmt.setTimestamp(11, Timestamp.valueOf(c.getCreatedAt()));
+            }
+
+            if (c.getUpdatedAt() == null) {
+                stmt.setNull(12, Types.TIMESTAMP);
+            } else {
+                stmt.setTimestamp(12, Timestamp.valueOf(c.getUpdatedAt()));
+            }
+
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            ConsoleColors.printError("Error restoring contact: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
      * Fetches all contacts, optionally sorted.
      * 
      * @param sortByColumn The database column name to sort by (e.g., "last_name").
