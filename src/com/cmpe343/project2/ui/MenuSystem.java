@@ -831,15 +831,26 @@ public class MenuSystem {
 
         String neonAccent = "\033[48;5;54m\033[38;5;226m"; // deep purple background with neon yellow text
         String neonShadow = "\033[48;5;235m\033[38;5;141m"; // dark background with magenta text
-        String header = String.format(headerFormat, "ID", "First", "Middle", "Last", "Nickname", "Phone (P)",
+        String neonPulse = "\033[48;5;93m\033[38;5;16m"; // electric pink glow with dark ink
+        String auroraGreen = "\033[48;5;35m\033[38;5;231m";
+        String auroraCyan = "\033[48;5;31m\033[38;5;231m";
+        String auroraBlue = "\033[48;5;27m\033[38;5;231m";
+
+        String header = String.format(headerFormat, "#", "First", "Middle", "Last", "Alias", "Phone (P)",
                 "Phone (S)", "Email", "Birth", "Created", "Updated", "LinkedIn");
         int borderWidth = header.length() + 4;
+        String glowLine = neonPulse + "╭" + "═".repeat(borderWidth - 2) + "╮" + ConsoleColors.RESET;
         String topBorder = neonAccent + "╔" + "═".repeat(borderWidth - 2) + "╗" + ConsoleColors.RESET;
         String midBorder = neonAccent + "╠" + "═".repeat(borderWidth - 2) + "╣" + ConsoleColors.RESET;
         String bottomBorder = neonAccent + "╚" + "═".repeat(borderWidth - 2) + "╝" + ConsoleColors.RESET;
 
+        String auroraRibbon = auroraGreen + "▞" + auroraCyan + "▞" + auroraBlue + "▞" + auroraCyan + "▞" + auroraGreen
+                + "▞" + auroraCyan + "▞" + auroraBlue + "▞" + auroraCyan + "▞" + auroraGreen + ConsoleColors.RESET;
+
         System.out.println(ConsoleColors.CYAN_BOLD + "⚡ Cosmic Contact Directory ⚡" + ConsoleColors.RESET);
         System.out.println(neonShadow + "Contacts Loaded: " + list.size() + ConsoleColors.RESET);
+        System.out.println(glowLine);
+        System.out.println(auroraRibbon);
         System.out.println(topBorder);
         System.out.println(neonAccent + "║ " + ConsoleColors.BLUE_BOLD + header + ConsoleColors.RESET + neonAccent + " ║" + ConsoleColors.RESET);
         System.out.println(midBorder);
@@ -860,8 +871,12 @@ public class MenuSystem {
                     c.getCreatedAt() == null ? "" : c.getCreatedAt().toString(),
                     c.getUpdatedAt() == null ? "" : c.getUpdatedAt().toString(),
                     safe(c.getLinkedinUrl()));
-            System.out.println(neonAccent + "║" + ConsoleColors.RESET + " " + zebra + row + ConsoleColors.RESET
-                    + " " + neonAccent + "║" + ConsoleColors.RESET);
+            String sideGlow = (rowIndex % 3 == 0) ? auroraGreen : (rowIndex % 3 == 1 ? auroraCyan : auroraBlue);
+            System.out.println(sideGlow + "║" + ConsoleColors.RESET + " " + zebra + row + ConsoleColors.RESET
+                    + " " + sideGlow + "║" + ConsoleColors.RESET);
+            if (rowIndex % 2 == 0 && rowIndex < list.size()) {
+                System.out.println(neonShadow + "║" + "·".repeat(borderWidth) + "║" + ConsoleColors.RESET);
+            }
         }
         System.out.println(bottomBorder);
     }
