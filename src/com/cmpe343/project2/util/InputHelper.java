@@ -9,8 +9,22 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 
 /**
- * Helper class to handle user input from the console safely.
- * Prevents crashes due to InputMismatchException and handles Data Validation.
+ * Helper class to handle user input from the console safely. Every public
+ * method follows a predictable validation pipeline:
+ * <ol>
+ * <li>Prompt the user with contextual text.</li>
+ * <li>Read raw input from the shared {@link Scanner}.</li>
+ * <li>Apply format or value validation with friendly error feedback.</li>
+ * <li>Loop until a valid value (or a "back" command when supported) is
+ *     provided.</li>
+ * </ol>
+ * The helpers centralize input rules so the UI layer remains focused on menu
+ * structure instead of parsing concerns.
+ *
+ * @author Raul Ibrahimov
+ * @author Akhmed Nazarov
+ * @author Omirbek Ubaidayev
+ * @author Kuandyk Kyrykbayev
  */
 public class InputHelper {
     private static final Scanner scanner = new Scanner(System.in);

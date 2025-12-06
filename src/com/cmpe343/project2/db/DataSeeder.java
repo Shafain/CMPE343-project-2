@@ -11,8 +11,15 @@ import java.time.LocalDate;
 import java.util.Random;
 
 /**
- * Utility class to seed the database with initial data.
- * Ensures the project requirements (4 users, 50 contacts) are met instantly.
+ * Utility class that seeds the database with baseline users and contacts so the
+ * console application always starts with meaningful data. The seeding routine
+ * follows a deterministic sequence: verify existing users, insert defaults when
+ * missing, then repeat the process for a batch of contacts.
+ *
+ * @author Raul Ibrahimov
+ * @author Akhmed Nazarov
+ * @author Omirbek Ubaidayev
+ * @author Kuandyk Kyrykbayev
  */
 public class DataSeeder {
 
