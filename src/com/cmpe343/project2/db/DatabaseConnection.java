@@ -6,9 +6,24 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 
 /**
- * Manages the JDBC connection to the MySQL database.
- * Implements the Singleton pattern to ensure only one connection instance is
- * used.
+ * Manages the lifecycle of the JDBC connection to the MySQL database using a
+ * lightweight singleton. The class is intentionally minimal so that every call
+ * to {@link #getConnection()} follows the same repeatable sequence:
+ * <ol>
+ * <li>Check whether a connection already exists or has been closed.</li>
+ * <li>Load the MySQL driver class to guarantee driver discovery on legacy
+ *     runtimes.</li>
+ * <li>Open a new connection with the configured credentials.</li>
+ * <li>Return the cached connection for reuse throughout the application.</li>
+ * </ol>
+ * The explicit {@link #closeConnection()} method mirrors that lifecycle by
+ * walking through validation and cleanup steps so the console application can
+ * release resources gracefully when exiting.
+ *
+ * @author Raul Ibrahimov
+ * @author Akhmed Nazarov
+ * @author Omirbek Ubaidayev
+ * @author Kuandyk Kyrykbayev
  */
 public class DatabaseConnection {
 
@@ -23,10 +38,20 @@ public class DatabaseConnection {
     }
 
     /**
-     * Returns the active database connection.
-     * Establishes a new connection if one does not exist or is closed.
-     * 
-     * @return Connection object.
+     * Retrieves a ready-to-use JDBC connection. The method intentionally walks
+     * through the following steps to avoid surprises:
+     * <ul>
+     * <li>Verify whether a cached connection exists and is still open.</li>
+     * <li>Load the MySQL driver class to support environments that require
+     *     explicit driver registration.</li>
+     * <li>Create a new connection using the configured URL, username and
+     *     password when none is available.</li>
+     * <li>Return the shared connection instance to all callers.</li>
+     * </ul>
+     * Any unrecoverable error prints a descriptive message and halts the
+     * application because database access is critical to the program flow.
+     *
+     * @return Connection object guaranteed to be open when returned.
      */
     public static Connection getConnection() {
         try {
@@ -52,7 +77,10 @@ public class DatabaseConnection {
     }
 
     /**
-     * Closes the connection explicitly when the application shuts down.
+     * Closes the shared database connection during application shutdown. The
+     * method checks that a connection exists, confirms it is still open, closes
+     * it, and logs the outcome. Errors are reported to the console but do not
+     * rethrow to avoid masking shutdown routines.
      */
     public static void closeConnection() {
         try {

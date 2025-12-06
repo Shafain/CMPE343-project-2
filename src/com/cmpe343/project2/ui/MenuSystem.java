@@ -15,12 +15,23 @@ import com.cmpe343.project2.util.InputHelper;
 import java.util.List;
 
 /**
- * The primary User Interface controller for the Console Application.
- * Handles:
- * 1. User Authentication.
- * 2. Role-Based Menu Display.
- * 3. Input routing to DAOs and Services.
- * 4. ASCII Animations.
+ * Central console controller that stitches together authentication, menu
+ * navigation, command execution, and console presentation. The class drives the
+ * full interaction loop in a stepwise manner:
+ * <ol>
+ * <li>Boot sequence runs {@link #start()} to show animations and route either
+ *     to login or the main menu depending on session state.</li>
+ * <li>Role-aware menus surface only the options permitted for the current
+ *     {@link com.cmpe343.project2.model.Role}.</li>
+ * <li>User selections are funneled to dedicated handler methods that orchestrate
+ *     input validation, DAO operations, and command invocations.</li>
+ * <li>Graceful shutdown closes database and input resources.</li>
+ * </ol>
+ *
+ * @author Raul Ibrahimov
+ * @author Akhmed Nazarov
+ * @author Omirbek Ubaidayev
+ * @author Kuandyk Kyrykbayev
  */
 public class MenuSystem {
 
