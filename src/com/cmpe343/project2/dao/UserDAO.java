@@ -102,6 +102,29 @@ public class UserDAO {
     }
 
     /**
+     * Restores a previously deleted user with the same id and password hash.
+     */
+    public boolean restoreUser(User user) {
+        String sql = "INSERT INTO users (user_id, username, password_hash, first_name, last_name, role)"
+                + " VALUES (?, ?, ?, ?, ?, ?)";
+        try (Connection conn = DatabaseConnection.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, user.getUserId());
+            stmt.setString(2, user.getUsername());
+            stmt.setString(3, user.getPasswordHash());
+            stmt.setString(4, user.getFirstName());
+            stmt.setString(5, user.getLastName());
+            stmt.setString(6, user.getRole().toString());
+
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            ConsoleColors.printError("Error restoring user: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
      * Updates an existing user's details (Role, Name, etc).
      * Passwords are updated via a separate method.
      */
@@ -172,6 +195,7 @@ public class UserDAO {
         User user = new User();
         user.setUserId(rs.getInt("user_id"));
         user.setUsername(rs.getString("username"));
+        user.setPasswordHash(rs.getString("password_hash"));
         user.setFirstName(rs.getString("first_name"));
         user.setLastName(rs.getString("last_name"));
         user.setRole(Role.fromString(rs.getString("role")));
