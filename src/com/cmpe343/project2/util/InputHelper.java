@@ -222,6 +222,17 @@ public class InputHelper {
      * Clears the terminal using ANSI escape codes.
      */
     public static void clearScreen() {
+        String os = System.getProperty("os.name").toLowerCase();
+        ProcessBuilder builder = os.contains("win")
+                ? new ProcessBuilder("cmd", "/c", "cls")
+                : new ProcessBuilder("clear");
+        try {
+            builder.inheritIO().start().waitFor();
+            return;
+        } catch (Exception e) {
+            // Fallback to ANSI escape codes when external command fails
+        }
+
         System.out.print("\033[H\033[2J");
         System.out.flush();
     }
