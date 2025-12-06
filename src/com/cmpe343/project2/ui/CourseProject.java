@@ -21,6 +21,10 @@ import java.util.Date;
  * - Custom ASCII Render Engine (No external libs)
  * - Matrix Digital Rain Simulation
  * - Intro-Only Mode (Terminates after presentation)
+ *
+ * Note: This is a standalone showcase program. It is not wired into the
+ * main menu flow; run it directly if you want to see the animated intro
+ * without launching the contact manager.
  */
 public class CourseProject {
 
