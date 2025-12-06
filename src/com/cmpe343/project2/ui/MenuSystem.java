@@ -867,12 +867,13 @@ public class MenuSystem {
     private void printAsciiAnimation(String type) {
         if (type.equals("STARTUP")) {
             System.out.println(ConsoleColors.CYAN_BOLD);
-            System.out.println("   _____ __  __ _____  ______   ____  __ ___  ");
-            System.out.println("  / ____|  \\/  |  __ \\|  ____| |___ \\/ /|__ \\ ");
-            System.out.println(" | |    | \\  / | |__) | |__      __) / /_  ) |");
-            System.out.println(" | |    | |\\/| |  ___/|  __|    |__ <| '_|/ / ");
-            System.out.println(" | |____| |  | | |    | |____   ___) | (_) |_| ");
-            System.out.println("  \\_____|_|  |_|_|    |______| |____/ \\___/(_) ");
+            System.out.println("  _____ __  __ _____  ______   _____   _    _  _____  ____   _____ ");
+            System.out.println(" / ____|  \\/  |  __ \\|  ____| |  __ \\ | |  | |/ ____|/ __ \\ / ____|");
+            System.out.println("| |    | \\  / | |__) | |__    | |__) || |  | | |  __  |  | || |     ");
+            System.out.println("| |    | |\\/| |  ___/|  __|   |  ___/ | |  | | | |_ | |  | || |     ");
+            System.out.println("| |____| |  | | |    | |____  | |     | |__| | |__| ||__| || |____ ");
+            System.out.println(" \\_____|_|  |_|_|    |______| |_|      \\____/ \\_____| \\___/  \\_____| ");
+            System.out.println("  Advanced Java Programming • Group 21 • Matrix Intro Mode");
             System.out.println(ConsoleColors.RESET);
             try {
                 Thread.sleep(500);
@@ -881,12 +882,13 @@ public class MenuSystem {
         } else {
             System.out.println(ConsoleColors.YELLOW + "Shutting down... Goodbye!" + ConsoleColors.RESET);
             System.out.println(ConsoleColors.PURPLE_BOLD);
-            System.out.println("  ______ _           _   _                _           ");
-            System.out.println(" |  ____| |         | | (_)              | |          ");
-            System.out.println(" | |__  | | ___  ___| |_ _  ___  _ __  __| | ___ _ __ ");
-            System.out.println(" |  __| | |/ _ \\/ __| __| |/ _ \\| '_ \\/ _` |/ _ \\ '__|");
-            System.out.println(" | |____| |  __/ (__| |_| | (_) | | | | (_| |  __/ |   ");
-            System.out.println(" |______|_|\\___|\\___|\\__|_|\\___/|_| |_|\\__,_|\\___|_|   ");
+            System.out.println("   _____ _                 _               _            ");
+            System.out.println("  / ____| |               | |             | |           ");
+            System.out.println(" | |    | | ___  _   _  __| | ___ _ __ ___| | ___  ___  ");
+            System.out.println(" | |    | |/ _ \\| | | |/ _` |/ _ \\ '__/ __| |/ _ \\ / __| ");
+            System.out.println(" | |____| | (_) | |_| | (_| |  __/ | | (__| |  __/\\__ \\ ");
+            System.out.println("  \\_____|_|\\___/ \\__,_|\\__,_|\\___|_|  \\___|_|\\___||___/ ");
+            System.out.println("    Thank you for exploring the matrix showcase!      ");
             System.out.println(ConsoleColors.RESET);
         }
     }
