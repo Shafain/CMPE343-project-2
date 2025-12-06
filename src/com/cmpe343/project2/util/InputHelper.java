@@ -1,5 +1,7 @@
 package com.cmpe343.project2.util;
 
+import com.cmpe343.project2.model.Role;
+
 import java.util.Arrays;
 import java.util.Scanner;
 import java.time.LocalDate;
@@ -146,6 +148,59 @@ public class InputHelper {
                 return value;
             }
             ConsoleColors.printError("Invalid option. Allowed: " + Arrays.toString(allowed));
+        }
+    }
+
+    /**
+     * Reads a role value, enforcing the allowed set (TESTER, JUNIOR, SENIOR, MANAGER).
+     *
+     * @param prompt    The text to display.
+     * @param allowBack Whether typing "back" should cancel the prompt.
+     * @return A Role or null when the user opts to go back.
+     */
+    public static Role readRole(String prompt, boolean allowBack) {
+        while (true) {
+            System.out.print(prompt + " (TESTER, JUNIOR, SENIOR, MANAGER): ");
+            String input = scanner.nextLine().trim();
+
+            if (allowBack && BACK_KEYWORD.equalsIgnoreCase(input)) {
+                return null;
+            }
+
+            try {
+                return Role.valueOf(input.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                ConsoleColors.printError("Invalid role. Allowed: TESTER, JUNIOR, SENIOR, MANAGER.");
+            }
+        }
+    }
+
+    /**
+     * Reads a role value while allowing the user to keep the current one by pressing Enter.
+     *
+     * @param prompt       The text to display.
+     * @param currentRole  Role to keep when the user provides no input.
+     * @param allowBack    Whether typing "back" should cancel the prompt.
+     * @return The selected Role, the existing role when unchanged, or null if cancelled.
+     */
+    public static Role readRoleOrKeep(String prompt, Role currentRole, boolean allowBack) {
+        while (true) {
+            System.out.print(prompt + " (TESTER, JUNIOR, SENIOR, MANAGER or Enter to keep): ");
+            String input = scanner.nextLine().trim();
+
+            if (allowBack && BACK_KEYWORD.equalsIgnoreCase(input)) {
+                return null;
+            }
+
+            if (input.isEmpty()) {
+                return currentRole;
+            }
+
+            try {
+                return Role.valueOf(input.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                ConsoleColors.printError("Invalid role. Allowed: TESTER, JUNIOR, SENIOR, MANAGER.");
+            }
         }
     }
 

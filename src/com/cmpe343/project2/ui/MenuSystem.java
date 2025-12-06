@@ -382,16 +382,28 @@ public class MenuSystem {
 
             String[] tokens = selectionInput.split(",");
             List<Integer> selections = new java.util.ArrayList<>();
+            boolean invalidSelection = false;
             for (String token : tokens) {
                 if (token.trim().isEmpty())
                     continue;
                 try {
                     int val = Integer.parseInt(token.trim());
-                    if (val >= 1 && val <= 5 && !selections.contains(val)) {
+                    if (val < 1 || val > 5) {
+                        invalidSelection = true;
+                        break;
+                    }
+                    if (!selections.contains(val)) {
                         selections.add(val);
                     }
                 } catch (NumberFormatException ignored) {
+                    invalidSelection = true;
+                    break;
                 }
+            }
+
+            if (invalidSelection) {
+                ConsoleColors.printError("Selections must be numbers between 1 and 5.");
+                continue;
             }
 
             if (selections.size() < 2) {
@@ -502,58 +514,63 @@ public class MenuSystem {
 
     private void handleSort() {
         ConsoleColors.printInfo("Select a field to sort by. Sorting persists until changed.");
-        System.out.println("1. ID");
-        System.out.println("2. First Name");
-        System.out.println("3. Last Name");
-        System.out.println("4. Email");
-        System.out.println("5. Primary Phone");
-        String colInput = InputHelper.readString("Field (or 'back' to cancel)");
-        if ("back".equalsIgnoreCase(colInput))
-            return;
+        while (true) {
+            System.out.println("1. ID");
+            System.out.println("2. First Name");
+            System.out.println("3. Last Name");
+            System.out.println("4. Email");
+            System.out.println("5. Primary Phone");
+            String colInput = InputHelper.readString("Field (or 'back' to cancel)");
+            if ("back".equalsIgnoreCase(colInput))
+                return;
 
-        int colChoice;
-        try {
-            colChoice = Integer.parseInt(colInput);
-        } catch (NumberFormatException e) {
-            ConsoleColors.printError("Invalid input. Please enter a valid number.");
-            return;
+            int colChoice;
+            try {
+                colChoice = Integer.parseInt(colInput);
+            } catch (NumberFormatException e) {
+                ConsoleColors.printError("Invalid input. Please enter a valid number.");
+                continue;
+            }
+
+            if (colChoice < 1 || colChoice > 5) {
+                ConsoleColors.printError("Invalid option. Allowed: [1, 2, 3, 4, 5]");
+                continue;
+            }
+
+            String col = switch (colChoice) {
+                case 1 -> "contact_id";
+                case 2 -> "first_name";
+                case 3 -> "last_name";
+                case 4 -> "email";
+                case 5 -> "phone_primary";
+                default -> "last_name";
+            };
+
+            while (true) {
+                System.out.println("Order: 1. Ascending, 2. Descending");
+                String orderInput = InputHelper.readString("Order (or 'back' to cancel)");
+                if ("back".equalsIgnoreCase(orderInput))
+                    return;
+
+                int orderChoice;
+                try {
+                    orderChoice = Integer.parseInt(orderInput);
+                } catch (NumberFormatException e) {
+                    ConsoleColors.printError("Invalid input. Please enter 1 or 2.");
+                    continue;
+                }
+
+                if (orderChoice != 1 && orderChoice != 2) {
+                    ConsoleColors.printError("Invalid option. Allowed: [1, 2]");
+                    continue;
+                }
+
+                lastSortColumn = col;
+                lastSortAsc = orderChoice == 1;
+                printContacts(getSortedContacts());
+                return;
+            }
         }
-
-        if (colChoice < 1 || colChoice > 5) {
-            ConsoleColors.printError("Invalid option. Allowed: [1, 2, 3, 4, 5]");
-            return;
-        }
-
-        String col = switch (colChoice) {
-            case 1 -> "contact_id";
-            case 2 -> "first_name";
-            case 3 -> "last_name";
-            case 4 -> "email";
-            case 5 -> "phone_primary";
-            default -> "last_name";
-        };
-
-        System.out.println("Order: 1. Ascending, 2. Descending");
-        String orderInput = InputHelper.readString("Order (or 'back' to cancel)");
-        if ("back".equalsIgnoreCase(orderInput))
-            return;
-
-        int orderChoice;
-        try {
-            orderChoice = Integer.parseInt(orderInput);
-        } catch (NumberFormatException e) {
-            ConsoleColors.printError("Invalid input. Please enter 1 or 2.");
-            return;
-        }
-
-        if (orderChoice != 1 && orderChoice != 2) {
-            ConsoleColors.printError("Invalid option. Allowed: [1, 2]");
-            return;
-        }
-
-        lastSortColumn = col;
-        lastSortAsc = orderChoice == 1;
-        printContacts(getSortedContacts());
     }
 
     private void handleAddContact() {
@@ -686,8 +703,12 @@ public class MenuSystem {
         u.setFirstName(InputHelper.readString("First Name"));
         u.setLastName(InputHelper.readString("Last Name"));
 
-        System.out.println("Roles: TESTER, JUNIOR, SENIOR, MANAGER");
-        u.setRole(Role.fromString(InputHelper.readString("Role")));
+        Role role = InputHelper.readRole("Role", true);
+        if (role == null) {
+            ConsoleColors.printWarning("User creation cancelled.");
+            return;
+        }
+        u.setRole(role);
 
         if (userDAO.addUser(u, pwd)) {
             ConsoleColors.printSuccess("User created successfully.");
@@ -741,10 +762,11 @@ public class MenuSystem {
         if (!lname.isEmpty())
             existingUser.setLastName(lname);
 
-        String roleStr = InputHelper
-                .readString("Role [" + existingUser.getRole() + "] (TESTER, JUNIOR, SENIOR, MANAGER)");
-        if (!roleStr.isEmpty())
-            existingUser.setRole(Role.fromString(roleStr));
+        Role updatedRole = InputHelper.readRoleOrKeep("Role [" + existingUser.getRole() + "]",
+                existingUser.getRole(), true);
+        if (updatedRole == null)
+            return;
+        existingUser.setRole(updatedRole);
 
         if (userDAO.updateUser(existingUser)) {
             ConsoleColors.printSuccess("User updated successfully.");
@@ -754,26 +776,35 @@ public class MenuSystem {
     private void handleChangePassword() {
         System.out.println("--- Change Password ---");
 
-        String newPass = InputHelper.readString("Enter new password");
-        if (newPass.isEmpty()) {
-            ConsoleColors.printError("Password cannot be empty.");
-            return;
-        }
+        while (true) {
+            String newPass = InputHelper.readString("Enter new password (or type 'back' to cancel)");
+            if ("back".equalsIgnoreCase(newPass))
+                return;
 
-        String confirmPass = InputHelper.readString("Confirm new password");
+            if (newPass.isEmpty()) {
+                ConsoleColors.printError("Password cannot be empty.");
+                continue;
+            }
 
-        if (!newPass.equals(confirmPass)) {
-            ConsoleColors.printError("Passwords do not match! Operation cancelled.");
-            return;
-        }
+            String confirmPass = InputHelper.readString("Confirm new password (or type 'back' to cancel)");
 
-        // Get current user ID
-        int userId = SessionContext.getInstance().getCurrentUser().getUserId();
+            if ("back".equalsIgnoreCase(confirmPass))
+                return;
 
-        if (userDAO.updatePassword(userId, newPass)) {
-            ConsoleColors.printSuccess("Password changed successfully.");
-        } else {
-            ConsoleColors.printError("Failed to change password.");
+            if (!newPass.equals(confirmPass)) {
+                ConsoleColors.printError("Passwords do not match. Please try again.");
+                continue;
+            }
+
+            // Get current user ID
+            int userId = SessionContext.getInstance().getCurrentUser().getUserId();
+
+            if (userDAO.updatePassword(userId, newPass)) {
+                ConsoleColors.printSuccess("Password changed successfully.");
+                return;
+            }
+
+            ConsoleColors.printError("Failed to change password. Please try again.");
         }
     }
 
