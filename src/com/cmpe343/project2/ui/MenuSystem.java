@@ -13,6 +13,7 @@ import com.cmpe343.project2.util.ConsoleColors;
 import com.cmpe343.project2.util.InputHelper;
 
 import java.util.List;
+import java.util.Random;
 
 /**
  * The primary User Interface controller for the Console Application.
@@ -27,6 +28,7 @@ public class MenuSystem {
     private final UserDAO userDAO;
     private final ContactDAO contactDAO;
     private final CommandInvoker commandInvoker;
+    private final Random random = new Random();
     private String lastSortColumn = "last_name";
     private boolean lastSortAsc = true;
 
@@ -382,16 +384,28 @@ public class MenuSystem {
 
             String[] tokens = selectionInput.split(",");
             List<Integer> selections = new java.util.ArrayList<>();
+            boolean invalidSelection = false;
             for (String token : tokens) {
                 if (token.trim().isEmpty())
                     continue;
                 try {
                     int val = Integer.parseInt(token.trim());
-                    if (val >= 1 && val <= 5 && !selections.contains(val)) {
+                    if (val < 1 || val > 5) {
+                        invalidSelection = true;
+                        break;
+                    }
+                    if (!selections.contains(val)) {
                         selections.add(val);
                     }
                 } catch (NumberFormatException ignored) {
+                    invalidSelection = true;
+                    break;
                 }
+            }
+
+            if (invalidSelection) {
+                ConsoleColors.printError("Selections must be numbers between 1 and 5.");
+                continue;
             }
 
             if (selections.size() < 2) {
@@ -502,58 +516,63 @@ public class MenuSystem {
 
     private void handleSort() {
         ConsoleColors.printInfo("Select a field to sort by. Sorting persists until changed.");
-        System.out.println("1. ID");
-        System.out.println("2. First Name");
-        System.out.println("3. Last Name");
-        System.out.println("4. Email");
-        System.out.println("5. Primary Phone");
-        String colInput = InputHelper.readString("Field (or 'back' to cancel)");
-        if ("back".equalsIgnoreCase(colInput))
-            return;
+        while (true) {
+            System.out.println("1. ID");
+            System.out.println("2. First Name");
+            System.out.println("3. Last Name");
+            System.out.println("4. Email");
+            System.out.println("5. Primary Phone");
+            String colInput = InputHelper.readString("Field (or 'back' to cancel)");
+            if ("back".equalsIgnoreCase(colInput))
+                return;
 
-        int colChoice;
-        try {
-            colChoice = Integer.parseInt(colInput);
-        } catch (NumberFormatException e) {
-            ConsoleColors.printError("Invalid input. Please enter a valid number.");
-            return;
+            int colChoice;
+            try {
+                colChoice = Integer.parseInt(colInput);
+            } catch (NumberFormatException e) {
+                ConsoleColors.printError("Invalid input. Please enter a valid number.");
+                continue;
+            }
+
+            if (colChoice < 1 || colChoice > 5) {
+                ConsoleColors.printError("Invalid option. Allowed: [1, 2, 3, 4, 5]");
+                continue;
+            }
+
+            String col = switch (colChoice) {
+                case 1 -> "contact_id";
+                case 2 -> "first_name";
+                case 3 -> "last_name";
+                case 4 -> "email";
+                case 5 -> "phone_primary";
+                default -> "last_name";
+            };
+
+            while (true) {
+                System.out.println("Order: 1. Ascending, 2. Descending");
+                String orderInput = InputHelper.readString("Order (or 'back' to cancel)");
+                if ("back".equalsIgnoreCase(orderInput))
+                    return;
+
+                int orderChoice;
+                try {
+                    orderChoice = Integer.parseInt(orderInput);
+                } catch (NumberFormatException e) {
+                    ConsoleColors.printError("Invalid input. Please enter 1 or 2.");
+                    continue;
+                }
+
+                if (orderChoice != 1 && orderChoice != 2) {
+                    ConsoleColors.printError("Invalid option. Allowed: [1, 2]");
+                    continue;
+                }
+
+                lastSortColumn = col;
+                lastSortAsc = orderChoice == 1;
+                printContacts(getSortedContacts());
+                return;
+            }
         }
-
-        if (colChoice < 1 || colChoice > 5) {
-            ConsoleColors.printError("Invalid option. Allowed: [1, 2, 3, 4, 5]");
-            return;
-        }
-
-        String col = switch (colChoice) {
-            case 1 -> "contact_id";
-            case 2 -> "first_name";
-            case 3 -> "last_name";
-            case 4 -> "email";
-            case 5 -> "phone_primary";
-            default -> "last_name";
-        };
-
-        System.out.println("Order: 1. Ascending, 2. Descending");
-        String orderInput = InputHelper.readString("Order (or 'back' to cancel)");
-        if ("back".equalsIgnoreCase(orderInput))
-            return;
-
-        int orderChoice;
-        try {
-            orderChoice = Integer.parseInt(orderInput);
-        } catch (NumberFormatException e) {
-            ConsoleColors.printError("Invalid input. Please enter 1 or 2.");
-            return;
-        }
-
-        if (orderChoice != 1 && orderChoice != 2) {
-            ConsoleColors.printError("Invalid option. Allowed: [1, 2]");
-            return;
-        }
-
-        lastSortColumn = col;
-        lastSortAsc = orderChoice == 1;
-        printContacts(getSortedContacts());
     }
 
     private void handleAddContact() {
@@ -686,8 +705,12 @@ public class MenuSystem {
         u.setFirstName(InputHelper.readString("First Name"));
         u.setLastName(InputHelper.readString("Last Name"));
 
-        System.out.println("Roles: TESTER, JUNIOR, SENIOR, MANAGER");
-        u.setRole(Role.fromString(InputHelper.readString("Role")));
+        Role role = InputHelper.readRole("Role", true);
+        if (role == null) {
+            ConsoleColors.printWarning("User creation cancelled.");
+            return;
+        }
+        u.setRole(role);
 
         if (userDAO.addUser(u, pwd)) {
             ConsoleColors.printSuccess("User created successfully.");
@@ -741,10 +764,11 @@ public class MenuSystem {
         if (!lname.isEmpty())
             existingUser.setLastName(lname);
 
-        String roleStr = InputHelper
-                .readString("Role [" + existingUser.getRole() + "] (TESTER, JUNIOR, SENIOR, MANAGER)");
-        if (!roleStr.isEmpty())
-            existingUser.setRole(Role.fromString(roleStr));
+        Role updatedRole = InputHelper.readRoleOrKeep("Role [" + existingUser.getRole() + "]",
+                existingUser.getRole(), true);
+        if (updatedRole == null)
+            return;
+        existingUser.setRole(updatedRole);
 
         if (userDAO.updateUser(existingUser)) {
             ConsoleColors.printSuccess("User updated successfully.");
@@ -754,26 +778,35 @@ public class MenuSystem {
     private void handleChangePassword() {
         System.out.println("--- Change Password ---");
 
-        String newPass = InputHelper.readString("Enter new password");
-        if (newPass.isEmpty()) {
-            ConsoleColors.printError("Password cannot be empty.");
-            return;
-        }
+        while (true) {
+            String newPass = InputHelper.readString("Enter new password (or type 'back' to cancel)");
+            if ("back".equalsIgnoreCase(newPass))
+                return;
 
-        String confirmPass = InputHelper.readString("Confirm new password");
+            if (newPass.isEmpty()) {
+                ConsoleColors.printError("Password cannot be empty.");
+                continue;
+            }
 
-        if (!newPass.equals(confirmPass)) {
-            ConsoleColors.printError("Passwords do not match! Operation cancelled.");
-            return;
-        }
+            String confirmPass = InputHelper.readString("Confirm new password (or type 'back' to cancel)");
 
-        // Get current user ID
-        int userId = SessionContext.getInstance().getCurrentUser().getUserId();
+            if ("back".equalsIgnoreCase(confirmPass))
+                return;
 
-        if (userDAO.updatePassword(userId, newPass)) {
-            ConsoleColors.printSuccess("Password changed successfully.");
-        } else {
-            ConsoleColors.printError("Failed to change password.");
+            if (!newPass.equals(confirmPass)) {
+                ConsoleColors.printError("Passwords do not match. Please try again.");
+                continue;
+            }
+
+            // Get current user ID
+            int userId = SessionContext.getInstance().getCurrentUser().getUserId();
+
+            if (userDAO.updatePassword(userId, newPass)) {
+                ConsoleColors.printSuccess("Password changed successfully.");
+                return;
+            }
+
+            ConsoleColors.printError("Failed to change password. Please try again.");
         }
     }
 
@@ -835,28 +868,161 @@ public class MenuSystem {
 
     private void printAsciiAnimation(String type) {
         if (type.equals("STARTUP")) {
-            System.out.println(ConsoleColors.CYAN_BOLD);
-            System.out.println("   _____ __  __ _____  ______   ____  __ ___  ");
-            System.out.println("  / ____|  \\/  |  __ \\|  ____| |___ \\/ /|__ \\ ");
-            System.out.println(" | |    | \\  / | |__) | |__      __) / /_  ) |");
-            System.out.println(" | |    | |\\/| |  ___/|  __|    |__ <| '_|/ / ");
-            System.out.println(" | |____| |  | | |    | |____   ___) | (_) |_| ");
-            System.out.println("  \\_____|_|  |_|_|    |______| |____/ \\___/(_) ");
-            System.out.println(ConsoleColors.RESET);
-            try {
-                Thread.sleep(500);
-            } catch (InterruptedException e) {
-            }
+            playMatrixIntro();
         } else {
-            System.out.println(ConsoleColors.YELLOW + "Shutting down... Goodbye!" + ConsoleColors.RESET);
-            System.out.println(ConsoleColors.PURPLE_BOLD);
-            System.out.println("  ______ _           _   _                _           ");
-            System.out.println(" |  ____| |         | | (_)              | |          ");
-            System.out.println(" | |__  | | ___  ___| |_ _  ___  _ __  __| | ___ _ __ ");
-            System.out.println(" |  __| | |/ _ \\/ __| __| |/ _ \\| '_ \\/ _` |/ _ \\ '__|");
-            System.out.println(" | |____| |  __/ (__| |_| | (_) | | | | (_| |  __/ |   ");
-            System.out.println(" |______|_|\\___|\\___|\\__|_|\\___/|_| |_|\\__,_|\\___|_|   ");
-            System.out.println(ConsoleColors.RESET);
+            playMatrixFarewell();
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // MATRIX INTRO / OUTRO ANIMATION SUITE
+    // ------------------------------------------------------------------
+    private static final String RESET = "\033[0m";
+    private static final String HI_GREEN = "\033[0;92m";
+    private static final String HI_CYAN = "\033[0;96m";
+    private static final String HI_PURPLE = "\033[0;95m";
+    private static final String HI_WHITE = "\033[0;97m";
+    private static final String HIDE_CURSOR = "\033[?25l";
+    private static final String SHOW_CURSOR = "\033[?25h";
+
+    private void playMatrixIntro() {
+        System.out.print(HIDE_CURSOR);
+        InputHelper.clearScreen();
+        printBootLog();
+        runMatrixRain();
+        revealGroup();
+        System.out.print(SHOW_CURSOR + RESET);
+        InputHelper.clearScreen();
+    }
+
+    private void playMatrixFarewell() {
+        InputHelper.clearScreen();
+        System.out.print(HIDE_CURSOR);
+        System.out.println(HI_PURPLE + centerText("╔══════════════════════════════════════╗") + RESET);
+        System.out.println(HI_CYAN + centerText("║  POWERING DOWN THE MATRIX CONSOLE... ║") + RESET);
+        System.out.println(HI_PURPLE + centerText("╚══════════════════════════════════════╝") + RESET);
+        sleep(400);
+        runMatrixRain();
+        System.out.println(HI_GREEN + centerText("See you on the next login, operator." + RESET));
+        System.out.print(SHOW_CURSOR);
+        sleep(400);
+        InputHelper.clearScreen();
+    }
+
+    private void printBootLog() {
+        String[] logs = new String[] {
+                "Initializing hypervisor threads...",
+                "Spawning matrix rain emitters...",
+                "Decrypting access layer...",
+                "Syncing neon palette...",
+                "Linking squad protocols..."
+        };
+
+        System.out.println(HI_PURPLE + centerText("Launching Matrix Console") + RESET);
+        System.out.println(HI_CYAN + centerText("Group 21 • Access Granted") + RESET);
+        for (String log : logs) {
+            System.out.println(HI_GREEN + " [ OK ] " + RESET + log);
+            sleep(250 + random.nextInt(200));
+        }
+        sleep(300);
+    }
+
+    private void runMatrixRain() {
+        int width = 70;
+        int height = 18;
+        int frames = 100;
+        int[] drops = new int[width];
+        for (int i = 0; i < width; i++) {
+            drops[i] = -1 * random.nextInt(50);
+        }
+
+        String chars = "01KMZ21XYZ@#&";
+        for (int f = 0; f < frames; f++) {
+            StringBuilder buffer = new StringBuilder();
+            buffer.append("\033[H");
+            for (int y = 0; y < height; y++) {
+                for (int x = 0; x < width; x++) {
+                    if (drops[x] == y) {
+                        buffer.append(HI_WHITE).append(chars.charAt(random.nextInt(chars.length()))).append(RESET);
+                    } else if (drops[x] > y && drops[x] - 6 < y) {
+                        buffer.append(HI_GREEN).append(chars.charAt(random.nextInt(chars.length()))).append(RESET);
+                    } else {
+                        buffer.append(' ');
+                    }
+                }
+                buffer.append('\n');
+            }
+            System.out.print(buffer.toString());
+
+            for (int i = 0; i < width; i++) {
+                drops[i]++;
+                if (drops[i] > height + random.nextInt(12)) {
+                    drops[i] = -1 * random.nextInt(25);
+                }
+            }
+            sleep(30);
+        }
+        InputHelper.clearScreen();
+    }
+
+    private void revealGroup() {
+        String[] banner = renderBigText("GROUP 21");
+        for (int k = 0; k < 3; k++) {
+            String color = k % 2 == 0 ? HI_CYAN : HI_WHITE;
+            for (String line : banner) {
+                System.out.println(centerText(color + line + RESET));
+            }
+            sleep(180);
+            InputHelper.clearScreen();
+        }
+
+        System.out.println();
+        System.out.println(HI_PURPLE + centerText("PROJECT TEAM") + RESET);
+        System.out.println();
+
+        String[] members = new String[] {
+                "Raul Ibrahimov",
+                "Akhmed Nazarov",
+                "Omirbek Ubaidayev",
+                "Kuandyk Kyrykbayev"
+        };
+
+        for (String member : members) {
+            System.out.print(HI_GREEN + "   >> DEVELOPER: " + RESET);
+            animateDecryption(member);
+            System.out.println();
+            sleep(250);
+        }
+        sleep(800);
+    }
+
+    private void animateDecryption(String target) {
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        for (int i = 0; i < target.length(); i++) {
+            char targetChar = target.charAt(i);
+            for (int k = 0; k < 3; k++) {
+                System.out.print(chars.charAt(random.nextInt(chars.length())));
+                sleep(15);
+                System.out.print("\b");
+            }
+            System.out.print(HI_WHITE + targetChar + RESET);
+        }
+    }
+
+    private String centerText(String text) {
+        int width = 80;
+        String clean = text.replaceAll("\\033\\[[;\\d]*m", "");
+        int pad = (width - clean.length()) / 2;
+        if (pad < 0)
+            pad = 0;
+        return " ".repeat(pad) + text;
+    }
+
+    private void sleep(int ms) {
+        try {
+            Thread.sleep(ms);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
     }
 }
